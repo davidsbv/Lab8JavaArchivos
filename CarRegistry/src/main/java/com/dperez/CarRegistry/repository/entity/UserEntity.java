@@ -35,6 +35,8 @@ public class UserEntity implements UserDetails {
     @JoinColumn(name = "role_name", referencedColumnName = "name", nullable = false)
     private RoleEntity role; // Ejemplo: ROLE_CLIENT, ROLE_VENDOR
 
+    private String image;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.getName().name()));

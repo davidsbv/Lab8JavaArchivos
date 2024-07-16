@@ -54,4 +54,28 @@
             <column name="name" value="ROLE_ADMIN"/>
         </insert>
     </changeSet>
+
+    <changeSet id="6" author="davidsbv">
+        <addColumn tableName="users">
+            <column name="image" type="VARCHAR(255)">
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="7" author="davidsbv">
+        <modifyDataType
+                tableName="users"
+                columnName="image"
+                newDataType="VARCHAR(1000)"/>
+    </changeSet>
+
+    <changeSet id="8" author="davidsbv">
+        <modifyDataType
+                tableName="users"
+                columnName="image"
+                newDataType="LONGTEXT"/>
+    </changeSet>
+
+
 </databaseChangeLog>
