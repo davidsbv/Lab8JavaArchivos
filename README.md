@@ -1,2 +1,2 @@
-# Lab7JavaTest
+# Lab8Archivos
 Add Testing to the application
