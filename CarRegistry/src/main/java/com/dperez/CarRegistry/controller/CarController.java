@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -185,6 +186,32 @@ public class CarController {
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping(value = "/upload-csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadCsv(@RequestParam(value = "file")MultipartFile file) {
+
+        if (file.isEmpty()) {
+            log.error("The file is empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        if (!file.getOriginalFilename().contains(".csv")) {
+
+            log.error("File format error");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("It is not a CSV file");
+
+        }
+
+        try {
+            carService.uploadCarsCsv(file);
+            log.info("Filename is {}", file);
+            return ResponseEntity.ok("File uploaded successfully");
+
+        } catch (RuntimeException e) {
+            log.error("Uploading *.csv error");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
 

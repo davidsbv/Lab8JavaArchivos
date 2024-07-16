@@ -1,0 +1,3 @@
+private final String [] HEADERS = {"brand_id", "model", "mileage",
+                                       "price", "year", "description",
+                                       "color", "fuel_type", "num_doors"};

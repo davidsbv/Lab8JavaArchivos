@@ -49,5 +49,14 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userEntity);
     }
 
+    @Override
+    public byte[] getUserImage(Integer id) throws IOException {
+
+        UserEntity userEntity = userRepository
+                .findById(id).orElseThrow(() -> new RuntimeException("User not found. Unknown Id: " + id));
+
+        return Base64.getDecoder().decode(userEntity.getImage());
+    }
+
 
 }

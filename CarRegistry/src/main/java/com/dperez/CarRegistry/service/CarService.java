@@ -1,7 +1,9 @@
 package com.dperez.CarRegistry.service;
 
+import com.dperez.CarRegistry.repository.entity.CarEntity;
 import com.dperez.CarRegistry.service.model.Car;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,4 +24,6 @@ public interface CarService {
     void deleteCarById(Integer id);
 
     CompletableFuture<List<Car>> getAllCars() throws IllegalArgumentException;
+
+    List<CarEntity> uploadCarsCsv(MultipartFile file);
 }

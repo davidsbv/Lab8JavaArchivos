@@ -4,16 +4,26 @@ import com.dperez.CarRegistry.repository.BrandRepository;
 import com.dperez.CarRegistry.repository.CarRepository;
 import com.dperez.CarRegistry.repository.entity.BrandEntity;
 import com.dperez.CarRegistry.repository.entity.CarEntity;
+import com.dperez.CarRegistry.repository.entity.UserEntity;
 import com.dperez.CarRegistry.repository.mapper.BrandEntityMapper;
 import com.dperez.CarRegistry.repository.mapper.CarEntityMapper;
 import com.dperez.CarRegistry.service.CarService;
 import com.dperez.CarRegistry.service.model.Brand;
 import com.dperez.CarRegistry.service.model.Car;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -228,5 +238,81 @@ public class CarServiceImpl implements CarService {
         // Se devuelve el resultado
         return CompletableFuture.completedFuture(allCars);
     }
+
+    @Override
+    public List<CarEntity> uploadCarsCsv(MultipartFile file) throws RuntimeException {
+        List<CarEntity> carEntityList = new ArrayList<>();
+
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), "UTF-8"));
+             CSVParser csvParser = new CSVParser(fileReader,
+                     CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+
+            Iterable<CSVRecord> csvRecords = csvParser.getRecords();
+
+            for (CSVRecord csvRecord : csvRecords) {
+                CarEntity carEntity = new CarEntity();
+
+                // Validación de campos antes de asignar valores
+                String brandIdStr = csvRecord.get("brand_id");
+                String model = csvRecord.get("model");
+                String mileageStr = csvRecord.get("mileage");
+                String priceStr = csvRecord.get("price");
+                String yearStr = csvRecord.get("year");
+                String description = csvRecord.get("description");
+                String color = csvRecord.get("color");
+                String fuelType = csvRecord.get("fuel_type");
+                String numDoorsStr = csvRecord.get("num_doors");
+
+                if (brandIdStr != null && !brandIdStr.isEmpty()) {
+                    BrandEntity brand = new BrandEntity();
+                    brand.setId(Integer.parseInt(brandIdStr));
+                    carEntity.setBrand(brand);
+                }
+
+                if (model != null && !model.isEmpty()) {
+                    carEntity.setModel(model);
+                }
+
+                if (mileageStr != null && !mileageStr.isEmpty()) {
+                    carEntity.setMileage(Integer.parseInt(mileageStr));
+                }
+
+                if (priceStr != null && !priceStr.isEmpty()) {
+                    carEntity.setPrice(Double.parseDouble(priceStr));
+                }
+
+                if (yearStr != null && !yearStr.isEmpty()) {
+                    carEntity.setYear(Integer.parseInt(yearStr));
+                }
+
+                if (description != null && !description.isEmpty()) {
+                    carEntity.setDescription(description);
+                }
+
+                if (color != null && !color.isEmpty()) {
+                    carEntity.setColor(color);
+                }
+
+                if (fuelType != null && !fuelType.isEmpty()) {
+                    carEntity.setFuelType(fuelType);
+                }
+
+                if (numDoorsStr != null && !numDoorsStr.isEmpty()) {
+                    carEntity.setNumDoors(Integer.parseInt(numDoorsStr));
+                }
+
+                carEntityList.add(carEntity);
+            }
+
+            carEntityList = carRepository.saveAll(carEntityList);
+
+        } catch (IOException ex) {
+            log.error("Upload cars failed", ex);
+            throw new RuntimeException("Error al cargar los coches", ex);
+        }
+
+        return carEntityList;
+    }
+
 
 }

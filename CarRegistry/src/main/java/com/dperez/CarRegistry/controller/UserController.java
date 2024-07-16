@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -47,33 +48,43 @@ public class UserController {
         }
     }
 
-    @PostMapping("/image/{id}/add")
+    @PostMapping("/image/add/{id}")
     public ResponseEntity<String> uploadImage(@PathVariable Integer id,
 
                                               @RequestParam(value = "imageFile") MultipartFile imageFile){
        try {
-           userService.addUserImage(id, imageFile);
-           return ResponseEntity.ok("Image saved successfully");
+           if (imageFile.getOriginalFilename() == null) {
+               return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+           }
+           if(imageFile.getOriginalFilename().contains(".png") || imageFile.getOriginalFilename().contains(".jpg")) {
+               userService.addUserImage(id, imageFile);
+               return ResponseEntity.ok("Image saved successfully");
+           }
+          return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
        }
-       catch (RuntimeException e){
+       catch (RuntimeException | IOException e){
            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
        }
        catch (Exception e){
-           return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
        }
     }
 
-    @GetMapping(value = "/download-image")
-    public ResponseEntity<?> downloadFile() throws IOException {
+    @GetMapping(value = "/image/get/{id}")
+    public ResponseEntity<?> getUserImage(@PathVariable Integer id) throws IOException {
 
-        MediaType contentType = MediaType.IMAGE_PNG;
-        ClassPathResource imageFile = new ClassPathResource("/images/user.png");
-
-        InputStream inputStream = imageFile.getInputStream();
-
-        return ResponseEntity.ok()
-                .contentType(contentType)
-                .body(new InputStreamResource(inputStream));
+      try {
+          byte[] imageBytes = userService.getUserImage(id);
+          HttpHeaders headers = new HttpHeaders();
+          headers.setContentType(MediaType.IMAGE_PNG);
+          return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+      }
+      catch (RuntimeException | IOException e){
+          return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+      }
+      catch (Exception e){
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+      }
     }
 
 }
