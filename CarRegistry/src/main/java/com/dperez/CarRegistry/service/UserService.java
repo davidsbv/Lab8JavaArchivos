@@ -7,5 +7,8 @@ import java.io.IOException;
 
 public interface UserService {
     UserEntity save(UserEntity newUser);
+
     void addUserImage(Integer id, MultipartFile file) throws IOException;
+
+    byte[] getUserImage(Integer id) throws IOException;
 }
