@@ -4,7 +4,6 @@ import com.dperez.CarRegistry.repository.BrandRepository;
 import com.dperez.CarRegistry.repository.CarRepository;
 import com.dperez.CarRegistry.repository.entity.BrandEntity;
 import com.dperez.CarRegistry.repository.entity.CarEntity;
-import com.dperez.CarRegistry.repository.entity.UserEntity;
 import com.dperez.CarRegistry.repository.mapper.BrandEntityMapper;
 import com.dperez.CarRegistry.repository.mapper.CarEntityMapper;
 import com.dperez.CarRegistry.service.CarService;
@@ -22,11 +21,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
 
 @Slf4j
 @Service
@@ -34,6 +34,10 @@ public class CarServiceImpl implements CarService {
 
     private static final String ALREADY_EXISTS = "already exists";
     private static final String DOES_NOT_EXIST = "does not exist";
+    private static final String [] CSV_HEADERS = {"brand_id","model","mileage",
+            "price","year","description",
+            "color","fuel_type","num_doors"};
+
     @Autowired
     private CarRepository carRepository;
     @Autowired
@@ -250,57 +254,30 @@ public class CarServiceImpl implements CarService {
             Iterable<CSVRecord> csvRecords = csvParser.getRecords();
 
             for (CSVRecord csvRecord : csvRecords) {
-                CarEntity carEntity = new CarEntity();
 
                 // Validación de campos antes de asignar valores
-                String brandIdStr = csvRecord.get("brand_id");
-                String model = csvRecord.get("model");
-                String mileageStr = csvRecord.get("mileage");
-                String priceStr = csvRecord.get("price");
-                String yearStr = csvRecord.get("year");
-                String description = csvRecord.get("description");
-                String color = csvRecord.get("color");
-                String fuelType = csvRecord.get("fuel_type");
-                String numDoorsStr = csvRecord.get("num_doors");
+                String brandId = fieldIsPresent(csvRecord,"brand_id");//csvRecord.get("brand_id");
+                String model = fieldIsPresent(csvRecord, "model");
+                String mileage = fieldIsPresent(csvRecord, "mileage");
+                String price = fieldIsPresent(csvRecord, "price");
+                String year = fieldIsPresent(csvRecord, "year");
+                String description = fieldIsPresent(csvRecord, "description");
+                String color = fieldIsPresent(csvRecord, "color");
+                String fuelType = fieldIsPresent(csvRecord, "fuel_type");
+                String numDoors = fieldIsPresent(csvRecord, "num_doors");
 
-                if (brandIdStr != null && !brandIdStr.isEmpty()) {
-                    BrandEntity brand = new BrandEntity();
-                    brand.setId(Integer.parseInt(brandIdStr));
-                    carEntity.setBrand(brand);
-                }
-
-                if (model != null && !model.isEmpty()) {
-                    carEntity.setModel(model);
-                }
-
-                if (mileageStr != null && !mileageStr.isEmpty()) {
-                    carEntity.setMileage(Integer.parseInt(mileageStr));
-                }
-
-                if (priceStr != null && !priceStr.isEmpty()) {
-                    carEntity.setPrice(Double.parseDouble(priceStr));
-                }
-
-                if (yearStr != null && !yearStr.isEmpty()) {
-                    carEntity.setYear(Integer.parseInt(yearStr));
-                }
-
-                if (description != null && !description.isEmpty()) {
-                    carEntity.setDescription(description);
-                }
-
-                if (color != null && !color.isEmpty()) {
-                    carEntity.setColor(color);
-                }
-
-                if (fuelType != null && !fuelType.isEmpty()) {
-                    carEntity.setFuelType(fuelType);
-                }
-
-                if (numDoorsStr != null && !numDoorsStr.isEmpty()) {
-                    carEntity.setNumDoors(Integer.parseInt(numDoorsStr));
-                }
-
+                BrandEntity brandEntity = BrandEntity.builder().id(Integer.parseInt(brandId)).build();
+                CarEntity carEntity = CarEntity.builder()
+                        .brand(brandEntity)
+                        .model(model)
+                        .mileage(Integer.parseInt(mileage))
+                        .price(Double.parseDouble(price))
+                        .year(Integer.parseInt(year))
+                        .description(description)
+                        .color(color)
+                        .fuelType(fuelType)
+                        .numDoors(Integer.parseInt(numDoors))
+                        .build();
                 carEntityList.add(carEntity);
             }
 
@@ -308,10 +285,44 @@ public class CarServiceImpl implements CarService {
 
         } catch (IOException ex) {
             log.error("Upload cars failed", ex);
-            throw new RuntimeException("Error al cargar los coches", ex);
+            throw new IllegalArgumentException("Error al cargar los coches", ex);
         }
 
         return carEntityList;
+    }
+
+    private String fieldIsPresent(CSVRecord csvRecord, String key){
+
+        String recordFromCsv = csvRecord.get(key);
+         if (recordFromCsv == null || recordFromCsv.isEmpty()){
+             throw new IllegalArgumentException("CSV data error");
+         }
+         return recordFromCsv;
+    }
+
+    @Override
+    public String downoladCarsCsv() {
+
+        List<CarEntity> carEntityList = carRepository.findAll();
+        StringBuilder csvContent = new StringBuilder();
+        csvContent.append(Arrays.toString(CSV_HEADERS)
+                .replace("[", "").replace("]", "")
+                        .replaceAll("\\s+", "")) // quita todos los espacios
+                .append("\n");
+
+        for (CarEntity carEntity : carEntityList){
+            csvContent.append(carEntity.getBrand().getId()).append(",")
+            .append(carEntity.getModel()).append(",")
+            .append(carEntity.getMileage()).append(",")
+            .append(carEntity.getPrice()).append(",")
+            .append(carEntity.getYear()).append(",")
+            .append(carEntity.getDescription()).append(",")
+            .append(carEntity.getColor()).append(",")
+            .append(carEntity.getFuelType()).append(",")
+            .append(carEntity.getNumDoors()).append("\n");
+        }
+
+        return csvContent.toString();
     }
 
 
