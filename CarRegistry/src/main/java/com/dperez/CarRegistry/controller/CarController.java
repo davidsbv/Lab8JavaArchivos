@@ -8,6 +8,8 @@ import com.dperez.CarRegistry.service.CarService;
 import com.dperez.CarRegistry.service.model.Car;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -209,11 +211,21 @@ public class CarController {
             log.info("Filename is {}", file);
             return ResponseEntity.ok("File uploaded successfully");
 
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Uploading *.csv error");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
+    }
 
+    @GetMapping("/download-csv")
+    public ResponseEntity<?> downloadCsv() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "cars.csv");
+
+        byte[] csvBytes = carService.downoladCarsCsv().getBytes();
+
+        return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
     }
 }

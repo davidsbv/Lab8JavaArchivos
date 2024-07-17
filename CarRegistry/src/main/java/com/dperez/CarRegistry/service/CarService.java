@@ -26,4 +26,6 @@ public interface CarService {
     CompletableFuture<List<Car>> getAllCars() throws IllegalArgumentException;
 
     List<CarEntity> uploadCarsCsv(MultipartFile file);
+
+    String downoladCarsCsv();
 }
